@@ -2,9 +2,13 @@ import { MatCalendarCellClassFunction } from '@angular/material/datepicker';
 import { DateAdapter } from '@angular/material/core';
 import { CompareOffset, getCompareDate } from './compare-date.util';
 
+/** getDayOfWeek(): 0 = Sunday ... 6 = Saturday. */
+const WEEKDAY_CLASS: Record<number, string> = { 5: 'cmp-wd-fr', 6: 'cmp-wd-sa', 0: 'cmp-wd-su' };
+
 /**
  * Builds a `dateClass` function that tags every month-view cell with `cmp-<day>`,
- * where <day> is the day-of-month of its Compare date. `compare-calendar.scss`
+ * where <day> is the day-of-month of its Compare date, plus `cmp-wd-fr|sa|su` when that
+ * Compare date falls on a Friday, Saturday or Sunday. `compare-calendar.scss`
  * turns that class into the second number under the date.
  * Pass the result as a NEW function whenever the offset changes so Material re-renders.
  */
@@ -16,8 +20,12 @@ export function compareDateClass<D>(
   return (date, view) => {
     const own = extra?.(date, view);
     if (view !== 'month') return own ?? '';
-    const cmp = `cmp-${adapter.getDate(getCompareDate(date, offset, adapter))}`;
-    return own ? [...toArray(own), cmp] : cmp;
+    const compare = getCompareDate(date, offset, adapter);
+    const classes = [`cmp-${adapter.getDate(compare)}`];
+    const weekday = WEEKDAY_CLASS[adapter.getDayOfWeek(compare)];
+    if (weekday) classes.push(weekday);
+    if (own) return [...toArray(own), ...classes];
+    return classes.length === 1 ? classes[0] : classes;
   };
 }
 

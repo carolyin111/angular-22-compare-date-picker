@@ -13,6 +13,15 @@ describe('compareDateClass', () => {
     expect(compareDateClass(adapter, 0)(new Date(2026, 4, 5), 'month')).toBe('cmp-5');
   });
 
+  it('adds a weekday class when the compare date is Fri/Sat/Sun', () => {
+    // 2026-05-01 is a Friday; -1 -> Thu 4/30 (none), +1 -> Sat 5/2, 0 -> Fri
+    expect(compareDateClass(adapter, -1)(new Date(2026, 4, 1), 'month')).toBe('cmp-30');
+    expect(compareDateClass(adapter, 1)(new Date(2026, 4, 1), 'month')).toEqual(['cmp-2', 'cmp-wd-sa']);
+    expect(compareDateClass(adapter, 0)(new Date(2026, 4, 1), 'month')).toEqual(['cmp-1', 'cmp-wd-fr']);
+    // -1 on Monday 5/4 -> Sunday 5/3
+    expect(compareDateClass(adapter, -1)(new Date(2026, 4, 4), 'month')).toEqual(['cmp-3', 'cmp-wd-su']);
+  });
+
   it('leaves year and multi-year views alone', () => {
     expect(compareDateClass(adapter, -1)(new Date(2026, 4, 1), 'year')).toBe('');
     expect(compareDateClass(adapter, -1)(new Date(2026, 4, 1), 'multi-year')).toBe('');

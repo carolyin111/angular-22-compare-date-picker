@@ -1,28 +1,132 @@
-// Adds a "Compare day" number under each date and Original/Compare row labels to the
-// MONTH (day-picking) view of a stock Material calendar. Year / multi-year views are untouched.
+// Adds a "Compare" row to the MONTH (day-picking) view of a stock Material calendar:
+//   - the circle keeps the Original day number,
+//   - a rounded light-grey chip under it holds the Compare day number and, when the Compare
+//     date is Fri / Sat / Sun, a red Fr / Sa / Su tag,
+//   - Original / Compare labels sit on the left of every week.
+// While a range is being picked (after the first click, before the second), the chips of the
+// previewed days turn blue. Once the selection is confirmed they go back to grey.
+// The dashed blue preview outline encloses both the Original and the Compare row.
+// Year / multi-year views are untouched.
 // Use together with `panelClass="compare-calendar"` and `compareDateClass`.
 // Must be included in global styles (the calendar renders in a CDK overlay).
-@mixin compare-calendar($label-width: 64px) {
+//
+// Customisable via CSS variables:
+//   --compare-row-bg / --compare-row-color      chip background / compare number colour
+//   --compare-weekend-color                     Fr / Sa / Su colour (default red)
+//   --compare-preview-bg / --compare-preview-color
+//                                               chips inside the range preview (default primary container)
+//   --compare-preview-edge-bg / --compare-preview-edge-color
+//                                               first / last chip of the preview (default primary)
+//   --compare-weekend-on-edge                   Fr / Sa / Su colour on the first / last chip
+@mixin compare-calendar(
+  $label-width: 64px,
+  $chip-height: 26px,
+  $row-gap: 8px,
+  $radius: 8px,
+  $outline-radius: 18px
+) {
+  // Space added under every circle: the Compare chip plus a gap so the dashed preview
+  // outlines of two consecutive weeks do not run into each other.
+  $band-height: $chip-height + $row-gap;
+  $line: $chip-height * 0.5;
+
+  // Material gives the calendar a fixed height; let it grow with the taller rows.
+  .mat-datepicker-content .mat-calendar.compare-calendar {
+    height: auto;
+  }
+
   .compare-calendar mat-month-view {
     // room for the left-hand labels
     display: block;
     padding-left: $label-width;
 
-    .mat-calendar-body-cell-content {
-      flex-direction: column;
-      gap: 1px;
+    // Every cell (and the leading spacer of the first week) grows by $band-height at the
+    // bottom (7.142857% = Material's default aspect ratio 1 => 50% / 7 columns); the
+    // button/circle keeps its original size.
+    td.mat-calendar-body-cell-container,
+    td.mat-calendar-body-label[colspan] {
+      padding-bottom: calc(7.142857% + #{$band-height}) !important;
     }
 
+    // leading spacer cell of the first week: month text takes no height
+    td.mat-calendar-body-label[colspan] {
+      line-height: 0;
+    }
+
+    td.mat-calendar-body-cell-container > .mat-calendar-body-cell {
+      height: calc(100% - #{$band-height});
+    }
+
+    // Compare chip + number. It is a child of the (absolutely positioned, 90% x 90% at 5%/5%)
+    // circle, so offset by the 5% margin to start right under the circle.
     @for $n from 1 through 31 {
       .cmp-#{$n} > .mat-calendar-body-cell-content::after {
         content: '#{$n}';
+        position: absolute;
+        top: calc(100% + 5.56%);
+        left: calc(-5.56% + 2px);
+        width: calc(111.12% - 4px);
+        height: $chip-height;
+        box-sizing: border-box;
+        border-radius: $radius;
+        background: var(--_band, var(--compare-row-bg, rgba(0, 0, 0, 0.06)));
+        text-align: center;
         font-size: 10px;
-        line-height: 1;
-        opacity: 0.7;
+        line-height: $line;
+        color: var(--_num, var(--compare-row-color, var(--mat-sys-on-surface-variant)));
       }
     }
 
-    // row labels: the first <td> of every week row is either col 0 or the spacer cell
+    // Fr / Sa / Su: second line of the chip. The class lives on the button, hence :has().
+    @each $cls, $text in (fr: 'Fr', sa: 'Sa', su: 'Su') {
+      td.mat-calendar-body-cell-container:has(> .cmp-wd-#{$cls})::after {
+        content: $text;
+        position: absolute;
+        z-index: 2;
+        left: 0;
+        right: 0;
+        bottom: $row-gap;
+        text-align: center;
+        font-size: 10px;
+        line-height: $line;
+        font-weight: 500;
+        color: var(--_weekday, var(--compare-weekend-color, #d32f2f));
+      }
+    }
+
+    // Range preview (first click done, second click pending): chips turn blue.
+    // State classes live on the button, hence :has(). Edge rule comes last so it wins.
+    td.mat-calendar-body-cell-container:has(> .mat-calendar-body-in-preview) {
+      --_band: var(--compare-preview-bg, var(--mat-sys-primary-container));
+      --_num: var(--compare-preview-color, var(--mat-sys-on-primary-container));
+    }
+
+    td.mat-calendar-body-cell-container:has(> .mat-calendar-body-preview-start),
+    td.mat-calendar-body-cell-container:has(> .mat-calendar-body-preview-end) {
+      --_band: var(--compare-preview-edge-bg, var(--mat-sys-primary));
+      --_num: var(--compare-preview-edge-color, var(--mat-sys-on-primary));
+      --_weekday: var(--compare-weekend-on-edge, #ffd6d6);
+    }
+
+    // Range preview outline: Material draws the dashed blue outline in the button's
+    // `.mat-calendar-body-cell-preview` span (90% of the circle area). Stretch it down over the
+    // Compare chip so Original and Compare are enclosed together, with matching round ends.
+    .mat-calendar-body-cell-preview {
+      height: calc(90% + #{$band-height} - #{$row-gap * 0.4});
+    }
+
+    .mat-calendar-body-preview-start .mat-calendar-body-cell-preview {
+      border-top-left-radius: $outline-radius;
+      border-bottom-left-radius: $outline-radius;
+    }
+
+    .mat-calendar-body-preview-end .mat-calendar-body-cell-preview {
+      border-top-right-radius: $outline-radius;
+      border-bottom-right-radius: $outline-radius;
+    }
+
+    // Row labels: the first <td> of every week row is either col 0 or the spacer cell.
+    // Two lines whose centres line up with the circle centre and the chip centre.
     tr[role='row'] > td:first-child {
       position: relative;
 
@@ -31,14 +135,14 @@
         white-space: pre;
         position: absolute;
         right: 100%;
-        top: 50%;
-        transform: translateY(-50%);
+        top: calc(50% - #{$band-height * 0.5} - 14px);
         width: $label-width;
         padding-right: 8px;
         box-sizing: border-box;
         text-align: left;
         font-size: 11px;
-        line-height: 1.5;
+        line-height: 28px;
+        font-weight: 400;
         color: var(--mat-sys-on-surface-variant);
       }
     }
