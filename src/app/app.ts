@@ -1,16 +1,26 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
-import { FormsModule } from '@angular/forms';
-import { DateAdapter } from '@angular/material/core';
+import { JsonPipe } from '@angular/common';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { FormControl, FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
-import { compareDateClass } from './compare-date-picker/compare-date-class';
-import { CompareCalendarHeader } from './compare-date-picker/compare-calendar-header.component';
+import {
+  CompareDatePicker,
+  CompareDateRangeValue,
+} from './compare-date-picker/compare-date-picker.component';
 import { CompareVisibility } from './compare-date-picker/compare-visibility';
 
 @Component({
   selector: 'app-root',
-  imports: [FormsModule, MatDatepickerModule, MatFormFieldModule, MatInputModule],
+  imports: [
+    FormsModule,
+    ReactiveFormsModule,
+    JsonPipe,
+    MatDatepickerModule,
+    MatFormFieldModule,
+    MatInputModule,
+    CompareDatePicker,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <main>
@@ -24,23 +34,9 @@ import { CompareVisibility } from './compare-date-picker/compare-visibility';
         </select>
       </label>
 
-      <div class="row">
-        <mat-form-field>
-          <mat-label>Single date</mat-label>
-          <input matInput [matDatepicker]="single" />
-          <mat-datepicker-toggle matIconSuffix [for]="single" />
-          <mat-datepicker #single panelClass="compare-calendar" [dateClass]="dateClass()" [calendarHeaderComponent]="header" />
-        </mat-form-field>
-
-        <mat-form-field>
-          <mat-label>Date range</mat-label>
-          <mat-date-range-input [rangePicker]="range">
-            <input matStartDate placeholder="Start" />
-            <input matEndDate placeholder="End" />
-          </mat-date-range-input>
-          <mat-datepicker-toggle matIconSuffix [for]="range" />
-          <mat-date-range-picker #range panelClass="compare-calendar" [dateClass]="dateClass()" [calendarHeaderComponent]="header" />
-        </mat-form-field>
+      <form class="row" [formGroup]="form">
+        <app-compare-date-picker label="Single date" formControlName="single" />
+        <app-compare-date-picker label="Date range" [range]="true" formControlName="range" />
 
         <mat-form-field>
           <mat-label>Stock (unchanged)</mat-label>
@@ -48,7 +44,14 @@ import { CompareVisibility } from './compare-date-picker/compare-visibility';
           <mat-datepicker-toggle matIconSuffix [for]="stock" />
           <mat-datepicker #stock />
         </mat-form-field>
-      </div>
+      </form>
+
+      <p>
+        <button type="button" (click)="toggleDisabled()">{{ form.disabled ? 'Enable' : 'Disable' }}</button>
+        <button type="button" (click)="form.reset()">Reset</button>
+      </p>
+      <pre>{{ form.value | json }}</pre>
+      <pre>status: {{ form.status }}</pre>
     </main>
   `,
   styles: `
@@ -57,8 +60,14 @@ import { CompareVisibility } from './compare-date-picker/compare-visibility';
   `,
 })
 export class App {
-  private readonly adapter = inject<DateAdapter<Date>>(DateAdapter);
-  protected readonly header = CompareCalendarHeader;
   protected readonly visibility = inject(CompareVisibility);
-  protected readonly dateClass = computed(() => compareDateClass(this.adapter, this.visibility.offset()));
+  protected readonly form = new FormGroup({
+    single: new FormControl<Date | null>(null),
+    range: new FormControl<CompareDateRangeValue>({ start: null, end: null }),
+  });
+
+  protected toggleDisabled(): void {
+    if (this.form.disabled) this.form.enable();
+    else this.form.disable();
+  }
 }

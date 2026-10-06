@@ -46,6 +46,29 @@ protected readonly dateClass = computed(() => compareDateClass(this.adapter, thi
 
 Pass a **new** `dateClass` function whenever the offset changes so Material re-renders the cells.
 
+## Form control component
+
+`<app-compare-date-picker>` wraps the stock picker, the Compare look, the header toggle and the
+footer into one reactive-forms control (`ControlValueAccessor` + `Validator`):
+
+```html
+<app-compare-date-picker label="Single date" formControlName="single" />
+<app-compare-date-picker label="Date range" [range]="true" formControlName="range" />
+```
+
+```ts
+form = new FormGroup({
+  single: new FormControl<Date | null>(null),                       // single: Date | null
+  range: new FormControl<CompareDateRangeValue>({ start: null, end: null }), // range: { start, end }
+});
+```
+
+- Works with `[formControl]`, `formControlName` and `ngModel`; `disable()` / `reset()` are supported.
+- Material's own validation errors (e.g. `matDatepickerParse`) show up on the outer control.
+- The value type is the native `Date` (use `provideNativeDateAdapter()`).
+- The Compare offset and the "Show Compare" state are shared through `CompareVisibility`
+  (`visibility.offset.set(-1 | 0 | 1)`).
+
 ## Trade-offs
 
 - The Compare number and labels are CSS pseudo-elements: visual only, not in the accessibility tree.
