@@ -1,0 +1,46 @@
+// Adds a "Compare day" number under each date and Original/Compare row labels to a stock
+// Material calendar. Use together with `panelClass="compare-calendar"` and `compareDateClass`.
+// Must be included in global styles (the calendar renders in a CDK overlay).
+@mixin compare-calendar($label-width: 64px) {
+  .compare-calendar {
+    // room for the left-hand labels
+    .mat-calendar-content {
+      padding-left: $label-width;
+    }
+
+    .mat-calendar-body-cell-content {
+      flex-direction: column;
+      gap: 1px;
+    }
+
+    @for $n from 1 through 31 {
+      .cmp-#{$n} > .mat-calendar-body-cell-content::after {
+        content: '#{$n}';
+        font-size: 10px;
+        line-height: 1;
+        opacity: 0.7;
+      }
+    }
+
+    // row labels: the first <td> of every week row is either col 0 or the spacer cell
+    tr[role='row'] > td:first-child {
+      position: relative;
+
+      &::before {
+        content: 'Original\A Compare';
+        white-space: pre;
+        position: absolute;
+        right: 100%;
+        top: 50%;
+        transform: translateY(-50%);
+        width: $label-width;
+        padding-right: 8px;
+        box-sizing: border-box;
+        text-align: left;
+        font-size: 11px;
+        line-height: 1.5;
+        color: var(--mat-sys-on-surface-variant);
+      }
+    }
+  }
+}
