@@ -6,7 +6,8 @@
 //   - Original / Compare labels sit on the left of every week.
 // The dashed blue preview outline encloses both the Original and the Compare row.
 // Year / multi-year views are untouched.
-// Use together with `panelClass="compare-calendar"` and `compareDateClass`.
+// Use together with `panelClass="compare-calendar"`, `compareDateClass` and, for the
+// "Show Compare" toggle, `[calendarHeaderComponent]="CompareCalendarHeader"`.
 // Must be included in global styles (the calendar renders in a CDK overlay).
 //
 // Customisable via CSS variables:
@@ -44,7 +45,8 @@
     height: auto;
   }
 
-  .compare-calendar mat-month-view {
+  // Active only while the header toggle (CompareCalendarHeader) is not "off".
+  .compare-calendar:not(:has([data-compare='off'])) mat-month-view {
     // room for the left-hand labels
     display: block;
     padding-left: $label-width;

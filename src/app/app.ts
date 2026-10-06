@@ -5,6 +5,7 @@ import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { compareDateClass } from './compare-date-picker/compare-date-class';
+import { CompareCalendarHeader } from './compare-date-picker/compare-calendar-header.component';
 import { CompareOffset } from './compare-date-picker/compare-date.util';
 
 @Component({
@@ -28,7 +29,7 @@ import { CompareOffset } from './compare-date-picker/compare-date.util';
           <mat-label>Single date</mat-label>
           <input matInput [matDatepicker]="single" />
           <mat-datepicker-toggle matIconSuffix [for]="single" />
-          <mat-datepicker #single panelClass="compare-calendar" [dateClass]="dateClass()" />
+          <mat-datepicker #single panelClass="compare-calendar" [dateClass]="dateClass()" [calendarHeaderComponent]="header" />
         </mat-form-field>
 
         <mat-form-field>
@@ -38,7 +39,7 @@ import { CompareOffset } from './compare-date-picker/compare-date.util';
             <input matEndDate placeholder="End" />
           </mat-date-range-input>
           <mat-datepicker-toggle matIconSuffix [for]="range" />
-          <mat-date-range-picker #range panelClass="compare-calendar" [dateClass]="dateClass()" />
+          <mat-date-range-picker #range panelClass="compare-calendar" [dateClass]="dateClass()" [calendarHeaderComponent]="header" />
         </mat-form-field>
 
         <mat-form-field>
@@ -57,6 +58,7 @@ import { CompareOffset } from './compare-date-picker/compare-date.util';
 })
 export class App {
   private readonly adapter = inject<DateAdapter<Date>>(DateAdapter);
+  protected readonly header = CompareCalendarHeader;
   protected readonly offset = signal<CompareOffset>(-1);
   protected readonly dateClass = computed(() => compareDateClass(this.adapter, this.offset()));
 }
