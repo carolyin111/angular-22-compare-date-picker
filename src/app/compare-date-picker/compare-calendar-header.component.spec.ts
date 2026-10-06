@@ -50,12 +50,13 @@ describe('CompareCalendarHeader', () => {
     expect(footer()).toContain('Compare Date: 2026/09/30 ~ 2026/10/22');
   });
 
-  it('hides the Compare line when Compare is off', () => {
+  it('hides the whole footer when Compare is off', () => {
     const fixture = render();
+    const el = fixture.nativeElement as HTMLElement;
+    expect(el.querySelector('.compare-footer')).toBeTruthy();
     TestBed.inject(CompareVisibility).show.set(false);
     fixture.detectChanges();
-    expect((fixture.nativeElement as HTMLElement).querySelector('.compare-footer')!.textContent).not.toContain(
-      'Compare Date',
-    );
+    expect(el.querySelector('.compare-footer')).toBeNull();
+    expect(el.querySelector('.compare-footer-wrap')).toBeNull();
   });
 });

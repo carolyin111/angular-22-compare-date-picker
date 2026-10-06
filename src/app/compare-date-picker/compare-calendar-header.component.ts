@@ -10,7 +10,8 @@ import { CompareVisibility } from './compare-visibility';
  * Calendar header for `[calendarHeaderComponent]`:
  *  - a bar with a "Show Compare" toggle at the inline end, on top of Material's regular header,
  *  - a footer (moved below the calendar with CSS `order`, see compare-calendar.scss) that lists
- *    the selected Origin date(s) and the matching Compare date(s).
+ *    the selected Origin date(s) and the matching Compare date(s); it is only rendered while
+ *    Compare is on.
  * The `data-compare` attribute drives `compare-calendar.scss`: when it is `off`, the calendar
  * falls back to the stock look.
  */
@@ -32,21 +33,21 @@ import { CompareVisibility } from './compare-visibility';
     <mat-divider />
     <mat-calendar-header />
 
-    <div class="compare-footer-wrap">
-      <mat-divider />
-      <div class="compare-footer" aria-live="polite">
-        <div class="compare-footer-line">
-          <span class="compare-footer-label">Origin Date:</span>
-          <span>{{ originText() }}</span>
-        </div>
-        @if (visibility.show()) {
+    @if (visibility.show()) {
+      <div class="compare-footer-wrap">
+        <mat-divider />
+        <div class="compare-footer" aria-live="polite">
+          <div class="compare-footer-line">
+            <span class="compare-footer-label">Origin Date:</span>
+            <span>{{ originText() }}</span>
+          </div>
           <div class="compare-footer-line">
             <span class="compare-footer-label">Compare Date:</span>
             <span>{{ compareText() }}</span>
           </div>
-        }
+        </div>
       </div>
-    </div>
+    }
   `,
   styles: `
     /* The header's children become direct flex items of <mat-calendar> (see compare-calendar.scss),
