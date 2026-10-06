@@ -4,6 +4,7 @@ import {
   Component,
   DestroyRef,
   computed,
+  effect,
   forwardRef,
   inject,
   input,
@@ -26,6 +27,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { CompareCalendarHeader } from './compare-calendar-header.component';
 import { compareDateClass } from './compare-date-class';
+import { CompareOffset } from './compare-date.util';
 import { CompareVisibility } from './compare-visibility';
 
 /** Value of the picker when `range` is on. */
@@ -45,12 +47,14 @@ export interface CompareDateRangeValue {
  *
  * Works with reactive forms (`[formControl]`, `formControlName`) and `ngModel`. Material's own
  * validation errors (`matDatepickerParse`, ...) are surfaced on the outer control.
+ * `[offset]` and `[showCompare]` configure the Compare row of this picker only.
  */
 @Component({
   selector: 'app-compare-date-picker',
   imports: [ReactiveFormsModule, MatDatepickerModule, MatFormFieldModule, MatInputModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [
+    CompareVisibility, // per picker: the popup's header / footer read this instance
     { provide: NG_VALUE_ACCESSOR, useExisting: forwardRef(() => CompareDatePicker), multi: true },
     { provide: NG_VALIDATORS, useExisting: forwardRef(() => CompareDatePicker), multi: true },
   ],
@@ -95,6 +99,10 @@ export class CompareDatePicker implements ControlValueAccessor, Validator {
   /** Select a start/end range instead of a single date. */
   readonly range = input(false);
   readonly label = input('Date');
+  /** Which day the Compare row shows: -1 (previous, default), 0 (same) or 1 (next). */
+  readonly offset = input<CompareOffset>(-1);
+  /** Initial state of the "Show Compare" toggle; the user can still flip it in the popup. */
+  readonly showCompare = input(true);
 
   protected readonly header = CompareCalendarHeader;
   protected readonly dateClass = computed(() =>
@@ -114,6 +122,9 @@ export class CompareDatePicker implements ControlValueAccessor, Validator {
 
   constructor() {
     const destroyRef = inject(DestroyRef);
+
+    effect(() => this.visibility.offset.set(this.offset()));
+    effect(() => this.visibility.show.set(this.showCompare()));
 
     this.single.valueChanges
       .pipe(takeUntilDestroyed(destroyRef))

@@ -21,8 +21,8 @@ Built with Angular 22 and Angular Material / CDK 22.
  │ Compare   3    4    5    6    7    8    9 │
  │           Sa   Su                       Fr │
  ├──────────────────────────────────────────┤
- │ Origin Date:  2026/10/08 ~ 2026/10/23    │  footer
- │ Compare Date: 2026/10/07 ~ 2026/10/22    │
+ │ Origin Date:  10/8/2026 ~ 10/23/2026     │  footer
+ │ Compare Date: 10/7/2026 ~ 10/22/2026     │
  └──────────────────────────────────────────┘
 ```
 
@@ -35,7 +35,8 @@ Built with Angular 22 and Angular Material / CDK 22.
 - **Header bar** – a `Show Compare` toggle at the inline end, above Material's own header, with a
   divider. Turning it off restores the stock calendar (no Compare row, no footer).
 - **Footer** – `Origin Date` and `Compare Date` for the current selection, as a single date or a
-  `start ~ end` range. Only shown while Compare is on.
+  `start ~ end` range, in the same format as the input (`MAT_DATE_FORMATS`). Only shown while
+  Compare is on.
 - **Range preview** – while a range is being picked, Material's dashed blue outline encloses both
   the Original and the Compare row. After the second click, Compare stays grey.
 - Month names inside the day grid (`OCT`, `SEP`, ...) are hidden so every month looks the same; the
@@ -75,6 +76,8 @@ Component API:
 |---|---|
 | `[range]` | `false` (default): value is `Date \| null`. `true`: value is `{ start: Date \| null; end: Date \| null }`. |
 | `[label]` | Label of the form field. |
+| `[offset]` | Compare day: `-1` (previous day, default), `0` (same day) or `1` (next day). |
+| `[showCompare]` | Initial state of the `Show Compare` toggle (default `true`). |
 | Forms | `[formControl]`, `formControlName`, `ngModel`; `disable()` / `enable()` / `reset()` / `setValue()` work. |
 | Validation | Material's own errors (e.g. `matDatepickerParse`) show up on the outer control. |
 | Touched | Set on blur and when the calendar closes. |
@@ -83,15 +86,18 @@ The value type is the native `Date`, so use it with `provideNativeDateAdapter()`
 
 ### Compare offset and the toggle
 
-`CompareVisibility` (root service) holds the state shared by every picker, header and footer:
+Each `<app-compare-date-picker>` provides its own `CompareVisibility` instance, fed by its
+`[offset]` and `[showCompare]` inputs, so two pickers on one page can use different offsets and
+toggle states. The popup's header and footer read that instance. The toggle state is not persisted.
+
+On a stock picker (next section) there is no component-level provider, so the root instance is
+shared by every stock picker:
 
 ```ts
 const visibility = inject(CompareVisibility);
 visibility.offset.set(1);   // -1 | 0 | 1
 visibility.show.set(false); // same as turning the header toggle off
 ```
-
-The state is global, not per picker, and is not persisted.
 
 ## Using it on a stock picker
 
@@ -207,7 +213,8 @@ comparison, an offset selector and Disable / Reset buttons.
 - `Fr` / `Sa` / `Su` are fixed English abbreviations; the labels and footer text are English.
 - The form control uses the native `Date` type; other date adapters (Moment, date-fns) would need
   the component made generic.
-- The offset and the "Show Compare" state are global to the app, not per picker.
+- On a stock picker (without `<app-compare-date-picker>`) the offset and "Show Compare" state come
+  from the root `CompareVisibility`, shared by all such pickers.
 
 ## Develop
 

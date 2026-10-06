@@ -41,13 +41,13 @@ describe('CompareCalendarHeader', () => {
 
     fixture.componentRef.setInput('selected', new Date(2026, 9, 8));
     fixture.detectChanges();
-    expect(footer()).toContain('Origin Date: 2026/10/08');
-    expect(footer()).toContain('Compare Date: 2026/10/07');
+    expect(footer()).toContain('Origin Date: 10/8/2026');
+    expect(footer()).toContain('Compare Date: 10/7/2026');
 
     fixture.componentRef.setInput('selected', new DateRange(new Date(2026, 9, 1), new Date(2026, 9, 23)));
     fixture.detectChanges();
-    expect(footer()).toContain('Origin Date: 2026/10/01 ~ 2026/10/23');
-    expect(footer()).toContain('Compare Date: 2026/09/30 ~ 2026/10/22');
+    expect(footer()).toContain('Origin Date: 10/1/2026 ~ 10/23/2026');
+    expect(footer()).toContain('Compare Date: 9/30/2026 ~ 10/22/2026');
   });
 
   it('hides the whole footer when Compare is off', () => {

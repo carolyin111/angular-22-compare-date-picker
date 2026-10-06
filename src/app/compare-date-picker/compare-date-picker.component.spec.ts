@@ -1,14 +1,16 @@
 import { Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { provideNativeDateAdapter } from '@angular/material/core';
 import { CompareDatePicker, CompareDateRangeValue } from './compare-date-picker.component';
+import { CompareVisibility } from './compare-visibility';
 
 @Component({
   imports: [ReactiveFormsModule, CompareDatePicker],
   template: `
     <app-compare-date-picker label="Single" [formControl]="single" />
-    <app-compare-date-picker label="Range" [range]="true" [formControl]="range" />
+    <app-compare-date-picker label="Range" [range]="true" [formControl]="range" [offset]="1" [showCompare]="false" />
   `,
 })
 class Host {
@@ -83,5 +85,15 @@ describe('CompareDatePicker (form control)', () => {
     type(inputs[0], 'not a date');
     fixture.detectChanges();
     expect(host.single.errors).toEqual(expect.objectContaining({ matDatepickerParse: expect.anything() }));
+  });
+
+  it('gives every picker its own Compare state, driven by its inputs', () => {
+    const { fixture } = setup();
+    const [a, b] = fixture.debugElement
+      .queryAll(By.directive(CompareDatePicker))
+      .map((de) => de.injector.get(CompareVisibility));
+    expect(a).not.toBe(b);
+    expect([a.offset(), a.show()]).toEqual([-1, true]);
+    expect([b.offset(), b.show()]).toEqual([1, false]);
   });
 });
