@@ -121,11 +121,12 @@ protected readonly dateClass = computed(() => compareDateClass(this.adapter, thi
 - `panelClass="compare-calendar"` switches the styles on.
 - `compareDateClass(adapter, offset, extra?)` tags each month-view cell with `cmp-<day>` (the
   day-of-month of its Compare date) and `cmp-wd-fr|sa|su`; pass your own `dateClass` as `extra` to
-  compose. Pass a **new** function whenever the offset changes so Material re-renders the cells.
-  The header and footer read the offset from `CompareVisibility`, so drive both from the same
-  `visibility.offset()`.
-- `CompareCalendarHeader` provides the toggle bar and the footer. Without it you still get the
-  Compare row, just no toggle and no footer.
+  compose. Build it from the same `visibility.offset()` the header and footer read.
+- `CompareCalendarHeader` provides the toggle bar and the footer, and refreshes the day cells when
+  the offset changes while the popup is open (Material only evaluates `dateClass` when a view is
+  initialised, so a new `dateClass` alone does not re-render an open calendar). Without the header
+  you still get the Compare row, but no toggle, no footer, and offset changes only show after the
+  popup is reopened or the month is changed.
 
 ## How it works
 

@@ -1,4 +1,11 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  Injector,
+  afterNextRender,
+  effect,
+  inject,
+} from '@angular/core';
 import { DateAdapter, MAT_DATE_FORMATS } from '@angular/material/core';
 import { MatDividerModule } from '@angular/material/divider';
 import { DateRange, MatCalendar, MatCalendarHeader } from '@angular/material/datepicker';
@@ -14,6 +21,8 @@ import { CompareVisibility } from './compare-visibility';
  *    Compare is on.
  * The `data-compare` attribute drives `compare-calendar.scss`: when it is `off`, the calendar
  * falls back to the stock look.
+ * Material only evaluates `dateClass` when a view is (re)initialised, so when the offset changes
+ * while the calendar is open the header re-runs that initialisation to refresh the cell classes.
  */
 @Component({
   selector: 'app-compare-calendar-header',
@@ -86,6 +95,19 @@ export class CompareCalendarHeader<D> {
   private readonly calendar = inject<MatCalendar<D>>(MatCalendar);
   private readonly adapter = inject<DateAdapter<D>>(DateAdapter);
   private readonly formats = inject(MAT_DATE_FORMATS);
+
+  constructor() {
+    const injector = inject(Injector);
+    let previous = this.visibility.offset();
+    effect(() => {
+      const offset = this.visibility.offset();
+      if (offset === previous) return;
+      previous = offset;
+      // After this render the new `dateClass` is bound on the month view; re-init it so the
+      // `cmp-*` classes are recomputed (MatMonthView.ngOnChanges ignores `dateClass`).
+      afterNextRender(() => this.calendar.updateTodaysDate(), { injector });
+    });
+  }
 
   protected originText(): string {
     return this.format((d) => d);

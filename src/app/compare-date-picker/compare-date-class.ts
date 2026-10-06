@@ -13,7 +13,8 @@ const WEEKDAY_CLASS: Record<number, string> = { 5: 'cmp-wd-fr', 6: 'cmp-wd-sa', 
  * where <day> is the day-of-month of its Compare date, plus `cmp-wd-fr|sa|su` when that
  * Compare date falls on a Friday, Saturday or Sunday. `compare-calendar.scss`
  * turns that class into the second number under the date.
- * Pass the result as a NEW function whenever the offset changes so Material re-renders.
+ * Material evaluates this only when the month view is (re)initialised, not when the `dateClass`
+ * input changes; `CompareCalendarHeader` re-initialises the view when the offset changes.
  */
 export function compareDateClass<D>(
   adapter: DateAdapter<D>,
