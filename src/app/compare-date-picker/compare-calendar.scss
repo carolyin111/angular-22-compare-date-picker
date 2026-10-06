@@ -45,6 +45,13 @@
     height: auto;
   }
 
+  // With CompareCalendarHeader the header's children (bar, stock header, footer) are flex items of
+  // <mat-calendar>; the footer is ordered below the calendar grid.
+  .mat-calendar.compare-calendar {
+    display: flex;
+    flex-direction: column;
+  }
+
   // Active only while the header toggle (CompareCalendarHeader) is not "off".
   .compare-calendar:not(:has([data-compare='off'])) mat-month-view {
     // room for the left-hand labels

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DateAdapter } from '@angular/material/core';
 import { MatDatepickerModule } from '@angular/material/datepicker';
@@ -6,7 +6,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { compareDateClass } from './compare-date-picker/compare-date-class';
 import { CompareCalendarHeader } from './compare-date-picker/compare-calendar-header.component';
-import { CompareOffset } from './compare-date-picker/compare-date.util';
+import { CompareVisibility } from './compare-date-picker/compare-visibility';
 
 @Component({
   selector: 'app-root',
@@ -17,7 +17,7 @@ import { CompareOffset } from './compare-date-picker/compare-date.util';
       <h1>Compare Date Picker</h1>
       <label>
         Compare offset
-        <select [ngModel]="offset()" (ngModelChange)="offset.set($event)">
+        <select [ngModel]="visibility.offset()" (ngModelChange)="visibility.offset.set($event)">
           <option [ngValue]="-1">-1 day</option>
           <option [ngValue]="0">same day</option>
           <option [ngValue]="1">+1 day</option>
@@ -59,6 +59,6 @@ import { CompareOffset } from './compare-date-picker/compare-date.util';
 export class App {
   private readonly adapter = inject<DateAdapter<Date>>(DateAdapter);
   protected readonly header = CompareCalendarHeader;
-  protected readonly offset = signal<CompareOffset>(-1);
-  protected readonly dateClass = computed(() => compareDateClass(this.adapter, this.offset()));
+  protected readonly visibility = inject(CompareVisibility);
+  protected readonly dateClass = computed(() => compareDateClass(this.adapter, this.visibility.offset()));
 }
