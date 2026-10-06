@@ -18,7 +18,7 @@ import { CompareVisibility } from './compare-visibility';
 @Component({
   selector: 'app-compare-calendar-header',
   imports: [MatCalendarHeader, MatDividerModule, MatSlideToggle],
-  changeDetection: ChangeDetectionStrategy.Default,
+  changeDetection: ChangeDetectionStrategy.Eager,
   host: { '[attr.data-compare]': 'visibility.show() ? "on" : "off"' },
   template: `
     <div class="compare-header-bar">
