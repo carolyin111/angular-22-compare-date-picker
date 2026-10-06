@@ -55,14 +55,21 @@
     // bottom (7.142857% = Material's default aspect ratio 1 => 50% / 7 columns); the
     // button/circle keeps its original size.
     td.mat-calendar-body-cell-container,
-    td.mat-calendar-body-label[colspan] {
+    tr[role='row'] > td.mat-calendar-body-label[colspan] {
       padding-bottom: calc(7.142857% + #{$band-height}) !important;
       background: $band-gradient;
     }
 
-    // leading spacer cell of the first week: month text takes no height; it carries the grey
+    // Material adds a separate month-label row (aria-hidden, no dates) above the first week when
+    // the month starts early in the week (e.g. Sep / Nov 2026). Hide it; the header shows the month.
+    tbody tr[aria-hidden='true'] {
+      display: none;
+    }
+
+    // leading spacer cell of the first week: month text is hidden; it carries the grey
     // band too so the first week's band is continuous from the label to the first date.
-    td.mat-calendar-body-label[colspan] {
+    tr[role='row'] > td.mat-calendar-body-label[colspan] {
+      font-size: 0; // hides the inline month text (AUG / OCT ...); the header already shows the month
       line-height: 0;
     }
 
