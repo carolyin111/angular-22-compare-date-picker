@@ -1,12 +1,12 @@
-// Adds a "Compare day" number under each date and Original/Compare row labels to a stock
-// Material calendar. Use together with `panelClass="compare-calendar"` and `compareDateClass`.
+// Adds a "Compare day" number under each date and Original/Compare row labels to the
+// MONTH (day-picking) view of a stock Material calendar. Year / multi-year views are untouched.
+// Use together with `panelClass="compare-calendar"` and `compareDateClass`.
 // Must be included in global styles (the calendar renders in a CDK overlay).
 @mixin compare-calendar($label-width: 64px) {
-  .compare-calendar {
+  .compare-calendar mat-month-view {
     // room for the left-hand labels
-    .mat-calendar-content {
-      padding-left: $label-width;
-    }
+    display: block;
+    padding-left: $label-width;
 
     .mat-calendar-body-cell-content {
       flex-direction: column;
