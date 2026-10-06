@@ -4,6 +4,7 @@ import {
   Component,
   DestroyRef,
   computed,
+  effect,
   forwardRef,
   inject,
   input,
@@ -24,9 +25,9 @@ import { DateAdapter } from '@angular/material/core';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
-import { merge } from 'rxjs';
 import { CompareCalendarHeader } from './compare-calendar-header.component';
 import { compareDateClass } from './compare-date-class';
+import { CompareOffset } from './compare-date.util';
 import { CompareVisibility } from './compare-visibility';
 
 /** Value of the picker when `range` is on. */
@@ -46,12 +47,14 @@ export interface CompareDateRangeValue {
  *
  * Works with reactive forms (`[formControl]`, `formControlName`) and `ngModel`. Material's own
  * validation errors (`matDatepickerParse`, ...) are surfaced on the outer control.
+ * `[offset]` and `[showCompare]` configure the Compare row of this picker only.
  */
 @Component({
   selector: 'app-compare-date-picker',
   imports: [ReactiveFormsModule, MatDatepickerModule, MatFormFieldModule, MatInputModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [
+    CompareVisibility, // per picker: the popup's header / footer read this instance
     { provide: NG_VALUE_ACCESSOR, useExisting: forwardRef(() => CompareDatePicker), multi: true },
     { provide: NG_VALIDATORS, useExisting: forwardRef(() => CompareDatePicker), multi: true },
   ],
@@ -96,9 +99,15 @@ export class CompareDatePicker implements ControlValueAccessor, Validator {
   /** Select a start/end range instead of a single date. */
   readonly range = input(false);
   readonly label = input('Date');
+  /** Which day the Compare row shows: -1 (previous, default), 0 (same) or 1 (next). */
+  readonly offset = input<CompareOffset>(-1);
+  /** Initial state of the "Show Compare" toggle; the user can still flip it in the popup. */
+  readonly showCompare = input(true);
 
   protected readonly header = CompareCalendarHeader;
-  protected readonly dateClass = computed(() => compareDateClass(this.adapter, this.visibility.offset()));
+  protected readonly dateClass = computed(() =>
+    compareDateClass(this.adapter, this.visibility.offset()),
+  );
 
   protected readonly single = new FormControl<Date | null>(null);
   protected readonly rangeGroup = new FormGroup({
@@ -108,38 +117,36 @@ export class CompareDatePicker implements ControlValueAccessor, Validator {
 
   protected onTouched: () => void = () => {};
   private onChange: (value: Date | CompareDateRangeValue | null) => void = () => {};
-  private onValidatorChange: () => void = () => {};
   /** True while writeValue pushes into the inner controls: those changes must not echo outwards. */
   private writing = false;
 
   constructor() {
     const destroyRef = inject(DestroyRef);
 
+    effect(() => this.visibility.offset.set(this.offset()));
+    effect(() => this.visibility.show.set(this.showCompare()));
+
     this.single.valueChanges
       .pipe(takeUntilDestroyed(destroyRef))
       .subscribe((v) => !this.writing && this.onChange(v));
     this.rangeGroup.valueChanges
       .pipe(takeUntilDestroyed(destroyRef))
-      .subscribe((v) => !this.writing && this.onChange({ start: v.start ?? null, end: v.end ?? null }));
-
-    // Material's validators (parse, min, max, ...) live on the inner controls: re-run the
-    // outer control's validation whenever they change.
-    merge(this.single.statusChanges, this.rangeGroup.statusChanges)
-      .pipe(takeUntilDestroyed(destroyRef))
-      .subscribe(() => !this.writing && this.onValidatorChange());
+      .subscribe(
+        (v) => !this.writing && this.onChange({ start: v.start ?? null, end: v.end ?? null }),
+      );
   }
 
   writeValue(value: Date | CompareDateRangeValue | null): void {
-    if (value && typeof value === 'object' && 'start' in value && !this.range()) return; // wrong shape
     // Events stay enabled so Material's form field / input refresh (label float, etc.);
-    // `writing` stops them from echoing back to the outer control.
+    // `writing` stops them from echoing back to the outer control. Inner controls run their
+    // validators before emitting, so `validate()` always sees current Material errors.
     this.writing = true;
     try {
-      if (this.isRangeValue(value)) {
-        this.rangeGroup.setValue({ start: value.start ?? null, end: value.end ?? null });
+      if (this.range()) {
+        const v = value && typeof value === 'object' && 'start' in value ? value : null;
+        this.rangeGroup.setValue({ start: v?.start ?? null, end: v?.end ?? null });
       } else {
-        this.single.setValue((value as Date | null) ?? null);
-        if (value == null) this.rangeGroup.reset({ start: null, end: null });
+        this.single.setValue(value instanceof Date ? value : null);
       }
     } finally {
       this.writing = false;
@@ -156,10 +163,6 @@ export class CompareDatePicker implements ControlValueAccessor, Validator {
     this.onTouched = fn;
   }
 
-  registerOnValidatorChange(fn: () => void): void {
-    this.onValidatorChange = fn;
-  }
-
   setDisabledState(disabled: boolean): void {
     const opts = { emitEvent: false };
     for (const control of [this.single, this.rangeGroup]) {
@@ -174,9 +177,5 @@ export class CompareDatePicker implements ControlValueAccessor, Validator {
       ? { ...this.rangeGroup.controls.start.errors, ...this.rangeGroup.controls.end.errors }
       : { ...this.single.errors };
     return Object.keys(errors).length ? errors : null;
-  }
-
-  private isRangeValue(value: unknown): value is CompareDateRangeValue {
-    return this.range() && !!value && typeof value === 'object' && 'start' in value;
   }
 }

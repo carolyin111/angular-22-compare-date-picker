@@ -1,5 +1,12 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
-import { DateAdapter } from '@angular/material/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  Injector,
+  afterNextRender,
+  effect,
+  inject,
+} from '@angular/core';
+import { DateAdapter, MAT_DATE_FORMATS } from '@angular/material/core';
 import { MatDividerModule } from '@angular/material/divider';
 import { DateRange, MatCalendar, MatCalendarHeader } from '@angular/material/datepicker';
 import { MatSlideToggle } from '@angular/material/slide-toggle';
@@ -14,11 +21,13 @@ import { CompareVisibility } from './compare-visibility';
  *    Compare is on.
  * The `data-compare` attribute drives `compare-calendar.scss`: when it is `off`, the calendar
  * falls back to the stock look.
+ * Material only evaluates `dateClass` when a view is (re)initialised, so when the offset changes
+ * while the calendar is open the header re-runs that initialisation to refresh the cell classes.
  */
 @Component({
   selector: 'app-compare-calendar-header',
   imports: [MatCalendarHeader, MatDividerModule, MatSlideToggle],
-  changeDetection: ChangeDetectionStrategy.Default,
+  changeDetection: ChangeDetectionStrategy.Eager,
   host: { '[attr.data-compare]': 'visibility.show() ? "on" : "off"' },
   template: `
     <div class="compare-header-bar">
@@ -52,7 +61,9 @@ import { CompareVisibility } from './compare-visibility';
   styles: `
     /* The header's children become direct flex items of <mat-calendar> (see compare-calendar.scss),
        so the footer can be ordered below the calendar grid. */
-    :host { display: contents; }
+    :host {
+      display: contents;
+    }
     .compare-header-bar {
       display: flex;
       justify-content: flex-end;
@@ -60,20 +71,43 @@ import { CompareVisibility } from './compare-visibility';
       padding: 8px 12px;
       font: var(--mat-sys-label-large);
     }
-    .compare-footer-wrap { order: 1; }
+    .compare-footer-wrap {
+      order: 1;
+    }
     .compare-footer {
       padding: 8px 16px 12px;
       font: var(--mat-sys-body-small);
       color: var(--mat-sys-on-surface);
     }
-    .compare-footer-line { display: flex; gap: 6px; line-height: 20px; }
-    .compare-footer-label { font-weight: 500; color: var(--mat-sys-on-surface-variant); }
+    .compare-footer-line {
+      display: flex;
+      gap: 6px;
+      line-height: 20px;
+    }
+    .compare-footer-label {
+      font-weight: 500;
+      color: var(--mat-sys-on-surface-variant);
+    }
   `,
 })
 export class CompareCalendarHeader<D> {
   protected readonly visibility = inject(CompareVisibility);
   private readonly calendar = inject<MatCalendar<D>>(MatCalendar);
   private readonly adapter = inject<DateAdapter<D>>(DateAdapter);
+  private readonly formats = inject(MAT_DATE_FORMATS);
+
+  constructor() {
+    const injector = inject(Injector);
+    let previous = this.visibility.offset();
+    effect(() => {
+      const offset = this.visibility.offset();
+      if (offset === previous) return;
+      previous = offset;
+      // After this render the new `dateClass` is bound on the month view; re-init it so the
+      // `cmp-*` classes are recomputed (MatMonthView.ngOnChanges ignores `dateClass`).
+      afterNextRender(() => this.calendar.updateTodaysDate(), { injector });
+    });
+  }
 
   protected originText(): string {
     return this.format((d) => d);
@@ -84,7 +118,7 @@ export class CompareCalendarHeader<D> {
     return this.format((d) => getCompareDate(d, offset, this.adapter));
   }
 
-  /** `2026/10/08`, `2026/10/08 ~ 2026/10/23` for a range, `—` when nothing is selected. */
+  /** `10/8/2026`, `10/8/2026 ~ 10/23/2026` for a range, `—` when nothing is selected. */
   private format(map: (d: D) => D): string {
     const selected = this.calendar.selected;
     if (selected instanceof DateRange) {
@@ -95,9 +129,8 @@ export class CompareCalendarHeader<D> {
     return selected ? this.fmt(map(selected as D)) : '—';
   }
 
+  /** Same format as the date input, so the footer follows `MAT_DATE_FORMATS` / the locale. */
   private fmt(d: D): string {
-    const a = this.adapter;
-    const pad = (n: number) => String(n).padStart(2, '0');
-    return `${a.getYear(d)}/${pad(a.getMonth(d) + 1)}/${pad(a.getDate(d))}`;
+    return this.adapter.format(d, this.formats.display.dateInput);
   }
 }

@@ -1,4 +1,7 @@
-import { MatCalendarCellClassFunction } from '@angular/material/datepicker';
+import {
+  MatCalendarCellClassFunction,
+  MatCalendarCellCssClasses,
+} from '@angular/material/datepicker';
 import { DateAdapter } from '@angular/material/core';
 import { CompareOffset, getCompareDate } from './compare-date.util';
 
@@ -10,7 +13,8 @@ const WEEKDAY_CLASS: Record<number, string> = { 5: 'cmp-wd-fr', 6: 'cmp-wd-sa', 
  * where <day> is the day-of-month of its Compare date, plus `cmp-wd-fr|sa|su` when that
  * Compare date falls on a Friday, Saturday or Sunday. `compare-calendar.scss`
  * turns that class into the second number under the date.
- * Pass the result as a NEW function whenever the offset changes so Material re-renders.
+ * Material evaluates this only when the month view is (re)initialised, not when the `dateClass`
+ * input changes; `CompareCalendarHeader` re-initialises the view when the offset changes.
  */
 export function compareDateClass<D>(
   adapter: DateAdapter<D>,
@@ -18,20 +22,20 @@ export function compareDateClass<D>(
   extra?: MatCalendarCellClassFunction<D>,
 ): MatCalendarCellClassFunction<D> {
   return (date, view) => {
-    const own = extra?.(date, view);
-    if (view !== 'month') return own ?? '';
+    const classes = toArray(extra?.(date, view));
+    if (view !== 'month') return classes;
     const compare = getCompareDate(date, offset, adapter);
-    const classes = [`cmp-${adapter.getDate(compare)}`];
+    classes.push(`cmp-${adapter.getDate(compare)}`);
     const weekday = WEEKDAY_CLASS[adapter.getDayOfWeek(compare)];
     if (weekday) classes.push(weekday);
-    if (own) return [...toArray(own), ...classes];
-    return classes.length === 1 ? classes[0] : classes;
+    return classes;
   };
 }
 
-function toArray(v: NonNullable<ReturnType<MatCalendarCellClassFunction<unknown>>>): string[] {
+function toArray(v: MatCalendarCellCssClasses | undefined): string[] {
+  if (!v) return [];
   if (typeof v === 'string') return [v];
-  if (Array.isArray(v)) return v;
+  if (Array.isArray(v)) return [...v];
   if (v instanceof Set) return [...v];
   return Object.keys(v).filter((k) => (v as Record<string, unknown>)[k]);
 }

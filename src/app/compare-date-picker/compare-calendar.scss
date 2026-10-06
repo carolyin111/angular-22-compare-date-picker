@@ -32,22 +32,12 @@
     var(--_row-bg) calc(100% - #{$row-gap}),
     transparent calc(100% - #{$row-gap})
   );
-  $label-gradient: linear-gradient(
-    to bottom,
-    transparent calc(100% - #{$band-height}),
-    var(--_row-bg) calc(100% - #{$band-height}),
-    var(--_row-bg) calc(100% - #{$row-gap}),
-    transparent calc(100% - #{$row-gap})
-  );
 
   // Material gives the calendar a fixed height; let it grow with the taller rows.
-  .mat-datepicker-content .mat-calendar.compare-calendar {
-    height: auto;
-  }
-
   // With CompareCalendarHeader the header's children (bar, stock header, footer) are flex items of
   // <mat-calendar>; the footer is ordered below the calendar grid.
-  .mat-calendar.compare-calendar {
+  .mat-datepicker-content .mat-calendar.compare-calendar {
+    height: auto;
     display: flex;
     flex-direction: column;
   }
@@ -146,7 +136,7 @@
       // the leading spacer spans k columns, so % of its width is k times a cell's width
       @for $k from 1 through 6 {
         &[colspan='#{$k}']::before {
-          padding-top: calc(#{50% / $k} - 16px);
+          padding-top: calc(50% / #{$k} - 16px);
         }
       }
 
@@ -161,7 +151,7 @@
         padding-top: calc(50% - 16px);
         padding-left: 6px;
         box-sizing: border-box;
-        background: $label-gradient;
+        background: $band-gradient;
         text-align: left;
         font-size: 11px;
         line-height: 32px;
