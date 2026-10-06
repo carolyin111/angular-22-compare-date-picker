@@ -123,8 +123,28 @@ protected readonly dateClass = computed(() => compareDateClass(this.adapter, thi
 
 ## How it works
 
-Material does not let you template calendar cells or swap the calendar (`MatDatepickerContent`
-hard-codes `<mat-calendar>`), so the feature only uses supported hooks plus CSS:
+**In short: no Material source is modified, forked or patched.** The feature is layered on top of
+the stock components using three hooks Material already exposes, plus CSS:
+
+| Hook | What we do with it |
+|---|---|
+| `dateClass` | Tag every day button with the Compare day (`cmp-30`) and weekday (`cmp-wd-fr`): this is how the *data* reaches the DOM. |
+| `panelClass` + global SCSS | Turn those classes into pixels: second number, grey band, row labels, taller preview outline. |
+| `calendarHeaderComponent` | Render the `Show Compare` toggle bar (wrapping Material's own header) and the footer. |
+
+`<app-compare-date-picker>` then wraps the stock picker and these hooks in a `ControlValueAccessor`,
+so to the outside it is one reactive-forms control while inside it is still Material's own
+component: range selection, month / year views, keyboard navigation and validation are untouched.
+
+**Why not change the calendar itself?** Material does not let you template calendar cells or swap
+the calendar (`MatDatepickerContent` hard-codes `<mat-calendar>`, and `MatDatepickerBase` is not
+exported). Only the hooks above are supported.
+
+**Trade-off:** Material keeps working and upgrades need no merge of its code, but the CSS depends
+on Material's internal class names and default cell proportions, so re-check it after upgrading
+(see [Limitations](#limitations)).
+
+The details:
 
 1. **`dateClass`** adds `cmp-<day>` / `cmp-wd-*` classes to the day buttons.
 2. **`panelClass`** scopes a global SCSS mixin that:
